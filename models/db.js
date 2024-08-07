@@ -1,8 +1,21 @@
 const mongoose = require("mongoose");
-
+//VkM9PYT16BtwfaYY
 mongoose
-  .connect("mongodb://localhost:27017/EggBucket_B2B")
+  .connect(process.env.URL_R)
   .then(async () => {
     console.log("Database connected!");
   })
   .catch((err) => console.error("Error connecting to database:", err));
+
+
+
+ 
+
+// mongoose
+//   .connect('mongodb+srv://<username>:<password>@<cluster-address>/<dbname>?retryWrites=true&w=majority')
+//   .then(() => {
+//     console.log("Database connected!");
+//   })
+//   .catch((err) => {
+//     console.error("Error connecting to database:", err);
+//   });

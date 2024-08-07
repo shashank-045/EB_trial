@@ -1,35 +1,49 @@
 const mongoose = require("mongoose");
 
-const outletSchema = new mongoose.Schema({
-  outletName: {
+const OutletPartner = require("./outlet_partner_model");
+const DeliveryPartner = require("./delivery_driver_model");
+
+const OutletSchema = new mongoose.Schema({
+  outletNumber: {
     type: String,
     required: true,
   },
-  location: {
-    address: {
-      street: String,
-      city: String,
-      state: String,
-      zip: String,
-    },
-    coordinates: {
-      // For geospatial queries (if needed)
-      type: { type: String, default: "Point" },
-      coordinates: [Number], // [longitude, latitude]
-    },
+  outletName:{
+    type:String
   },
-  contactInformation: {
-    phoneNumber: String,
-    email: String,
+  outletArea: {
+    type: String,
+    required: true,
   },
-  operatingHours: {
-    // You can store this in various formats (e.g., an array of objects for each day)
-    openingTime : String,
-    closingTime :String,
-  },
+  phoneNumber: String,
   
+ 
+  outletPartner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "OutletPartner",
+    required: true,
+  },
+  deliveryPartner: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "deliveryPartner",
+      required: true,
+    },
+  ],
+  img:String
 });
 
-const Outlet = mongoose.model("Outlet", outletSchema);
+// Pre-save middleware to check for duplicates in deliveryPartner
+OutletSchema.pre('save', function (next) {
+  // Check if deliveryPartner is an array and remove duplicates
+  if (Array.isArray(this.deliveryPartner)) {
+    const uniqueDeliveryPartners = [...new Set(this.deliveryPartner.map(String))];
+    
+    this.deliveryPartner = uniqueDeliveryPartners;
+  }
+  next();
+});
+
+const Outlet = mongoose.model("Outlet", OutletSchema);
 
 module.exports = Outlet;
