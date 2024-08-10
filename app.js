@@ -14,6 +14,7 @@ var outletpartnerRouter=require('./routes/outlet_partner')
 var deliverypartnerRoute=require('./routes/delivery_driver')
 var customerRouter=require('./routes/customer')
 var vendorRouter=require('./routes/vendor')
+var orderRouter=require('./routes/order')
 
 require("./models/db");
 
@@ -36,6 +37,7 @@ app.use('/outletPartners',outletpartnerRouter)
 app.use('/deliveryDrivers', deliverypartnerRoute);
 app.use('/customers',customerRouter)
 app.use('/vendors',vendorRouter)
+app.use('/orders',orderRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
