@@ -89,7 +89,7 @@ exports.updateEggbucketVendor = async (req, res) => {
 exports.deleteEggbucketVendor = async (req, res) => {
   try {
     const vendorId = req.params.id;
-    const vendor = await EggbucketVendor.findByIdAndRemove(vendorId);
+    const vendor = await EggbucketVendor.findByIdAndDelete(vendorId);
 
     if (!vendor) {
       return res.status(404).json({ error: "Vendor not found" });
