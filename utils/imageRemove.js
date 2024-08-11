@@ -1,19 +1,36 @@
-const fs = require("fs");
-const path = require("path");
+const cloudinary =require('./cloudinary')
 
-const removeImg = (folder,img) => {
-    return new Promise((resolve, reject) => {
-      const filePath = path.join('uploads',folder, img);
+const extractPublicIdFromUrl = (url) => {
   
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error("Error deleting file:", err);
-          reject(err); // Reject the promise if an error occurs
+  const match = url.split('/');
+
+  if (match[match.length-2]) {
+    let s=match[match.length-2]+'/'+match[match.length-1]
+     return s.split('.')[0]
+  } else {
+    throw new Error('Invalid Cloudinary URL');
+  }
+};
+
+
+const removeImg = (imageUrl) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const publicId = extractPublicIdFromUrl(imageUrl);
+      console.log(publicId)
+
+      cloudinary.uploader.destroy(publicId, (error, result) => {
+        if (error) {
+          console.error("Error deleting image from Cloudinary:", error);
+          reject(error);
         } else {
-          resolve(); // Resolve the promise if the file is deleted successfully
+          resolve(result);
         }
       });
-    });
-  };
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
 
 module.exports=removeImg

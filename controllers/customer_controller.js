@@ -1,6 +1,6 @@
 const Customer = require("../models/customer_model");
-const fs = require("fs");
-const path = require("path");
+const ApiFeatures=require('../utils/apifeatures')
+
 
 const removeImg=require('../utils/imageRemove')
 
@@ -12,17 +12,17 @@ try{
     }
 
     if (!data.customerName  ||!data.customerId ||!data.location ||!data. phoneNumber ||!data.outlet) {
-        await removeImg('customer',req.file.filename)
+        await removeImg(req.file.path)
         return res
           .status(400)
           .json({ error: "Name,customerId,location,phoneNo and Outlet are required" });
       }
-      data.img=req.file.filename
+      data.img=req.file.path
      const newCustomer = await Customer.create(data);
     res.status(201).json(newCustomer);
 
 }catch (err) {
-    await removeImg('customer',req.file.filename)
+   await removeImg(req.file.path)
     if (err.code === 11000) {
       // MongoDB duplicate key error
       return res
@@ -38,15 +38,23 @@ try{
 };
 
 exports.getAllCustomers = async (req, res) => {
-    try {
-      const Customers = await Customer.find().populate('outlet');
-      res.json(Customers);
-    } catch (err) {
-      res
-        .status(500)
-        .json({ error: "Failed to get Customers", details: err.message });
-    }
-  };
+  try {
+    
+    const apiFeatures = new ApiFeatures(Customer.find(), req.query)
+      .filtering()    // Apply filtering
+      .paginaton()    // Apply pagination
+      
+    // Apply population after other query methods
+    const Customers = await apiFeatures.query.populate('outlet');
+
+    res.json(Customers);
+    
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Failed to get Customers", details: err.message });
+  }
+};
 
 
   exports.getCustomerById = async (req, res) => {
@@ -72,11 +80,11 @@ exports.getAllCustomers = async (req, res) => {
       const updateData = req.body;
       console.log(req.body)
       // Check if there is a file upload
-      const file = req.file ? req.file.filename : null;
+      const file = req.file ? req.file.path : null;
   
       const customer = await Customer.findById(CId);
       if (!customer) {
-        await removeImg('customer',req.file.filename)
+        await removeImg(req.file.path)
         return res.status(404).json({ error: "Customer not found" });
       }
   
@@ -84,6 +92,7 @@ exports.getAllCustomers = async (req, res) => {
       if (file) {
         // Update the driver's image path
         updateData.img = file;
+      
       }
   
       // Update the driver with new data
@@ -92,11 +101,13 @@ exports.getAllCustomers = async (req, res) => {
       
       //remove old img
       if (customer.img && file) {
-        await removeImg('customer',customer.img)
+        await removeImg(customer.img)
       }
   
       res.json(updatedCustomer);
     } catch (err) {
+      if(req.file.path)
+        await removeImg(req.file.path)
       // Handle duplicate key errors
       if (err.code === 11000) {
         return res.status(400).json({ error: "Phone number or CustomerId already in use" });
@@ -117,7 +128,7 @@ exports.getAllCustomers = async (req, res) => {
   
       // Remove image file if it exists
       if (customer.img) {
-        await removeImg('customer',customer.img)
+        await removeImg(customer.img)
       }
   
       res.json({ message: "Customer deleted successfully" });

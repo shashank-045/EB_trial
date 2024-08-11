@@ -1,6 +1,5 @@
 const Outlet = require("../models/outlet_model");
-const path = require("path");
-const fs = require("fs");
+const ApiFeatures=require('../utils/apifeatures')
 const removeImg = require("../utils/imageRemove");
 
 exports.createOutlet = async (req, res) => {
@@ -13,12 +12,12 @@ exports.createOutlet = async (req, res) => {
         .json({ status: "fail", message: "No image file provided" });
     }
     if (!outletData.outletNumber || !outletData.outletArea) {
-      await removeImg('outlet',req.file.filename)
+      await removeImg(req.file.path)
       return res
         .status(400)
         .json({ error: "Outlet number and location are required" });
     }
-    outletData.img = req.file.filename;
+    outletData.img = req.file.path;
     const newOutlet = await Outlet.create(outletData);
     res.status(200).json({
       status: "success",
@@ -28,7 +27,7 @@ exports.createOutlet = async (req, res) => {
     });
   } catch (err) {
     // Handle errors (e.g., duplicate outlet name)
-    await removeImg('outlet',req.file.filename)
+    await removeImg(req.file.path)
     res
       .status(500)
       .json({
@@ -44,22 +43,24 @@ exports.createOutlet = async (req, res) => {
 // Get all outlets
 exports.getAllOutlets = async (req, res) => {
   try {
-    const outlets = await Outlet.find()
+    
+    const apiFeatures = new ApiFeatures(Outlet.find(), req.query) 
+      .filtering()    // Apply filtering
+      .paginaton()
+
+    // Apply population after other query methods
+    const outlets = await apiFeatures.query
       .populate({ path: "outletPartner", select: "_id firstName lastName" })
       .populate({ path: "deliveryPartner", select: "_id firstName lastName" });
 
-    res
-      .status(200)
-      .json({
-        status: "success",
-        code: 200,
-        message: "All outlets fetched successfully ",
-        data: outlets,
-      });
+    res.status(200).json({
+      status: "success",
+      code: 200,
+      message: "All outlets fetched successfully",
+      data: outlets,
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Failed to get outlets", details: err.message });
+    res.status(500).json({ error: "Failed to get outlets", details: err.message });
   }
 };
 
@@ -68,11 +69,13 @@ exports.updateOutlet = async (req, res) => {
   try {
     const outletId = req.params.id;
     const { deliveryPartner, removeDeliveryPartner, ...otherData } = req.body;
-    const file = req.file ? req.file.filename : null;
+    const file = req.file ? req.file.path : null;
     // Find the existing outlet
     const outlet = await Outlet.findById(outletId);
     if (!outlet) {
-      await removeImg('outlet',req.file.filename)
+      await removeImg(req.file.path)
+      console.log("oooo")
+      console.log(req.file.path)
       return res.status(404).json({ error: "Outlet not found" });
     }
 
@@ -103,7 +106,8 @@ exports.updateOutlet = async (req, res) => {
     
        // Remove old image file if it exists
        if (im && file) {
-        await removeImg('outlet',im)
+        console.log(im)
+        await removeImg(im)
       }
     
     res.status(200).json({
@@ -112,8 +116,8 @@ exports.updateOutlet = async (req, res) => {
       message: "Outlet updated successfully!",
     });
   } catch (err) {
-    
-    console.log(req.file.filename)
+    if(req.file.path)
+      await removeImg(req.file.path)
     res.status(500).json({
       error: "Failed to update outlet",
       details: err.message,
@@ -133,7 +137,7 @@ exports.deleteOutlet = async (req, res) => {
 
     await Outlet.findByIdAndDelete(outletId);
     if (outlet.img) {
-      await removeImg('outlet',outlet.img)
+      await removeImg(outlet.img)
     }
     res
       .status(200)

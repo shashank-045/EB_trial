@@ -19,7 +19,6 @@ const OrderSchema = new mongoose.Schema({
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: EggbucketVendor,
-    required: true
   },
   deliveryId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -37,8 +36,13 @@ const OrderSchema = new mongoose.Schema({
   isUrgent:{
     type:Boolean,
     default:false
+  },
+  status: {
+    type: String,
+    enum: ['intransit', 'pending', 'cancelled','completed'],
+    default: 'pending'
   }
-}, { timestamps: true }); // Automatically adds createdAt and updatedAt fields
+}, { timestamps: true }); 
 
 const Order = mongoose.model("Order", OrderSchema);
 

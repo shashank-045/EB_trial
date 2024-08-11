@@ -1,6 +1,5 @@
 const OutletPartner = require("../models/outlet_partner_model");
-const fs = require("fs");
-const path = require("path");
+const ApiFeatures=require('../utils/apifeatures')
 
 const removeImg = require("../utils/imageRemove");
 
@@ -13,16 +12,16 @@ exports.createOutletPartner = async (req, res) => {
         .json({ status: "fail", message: "No image file provided" });
     }
     if (!data.firstName || !data.phoneNumber) {
-      await removeImg("outletPartner", req.file.filename);
+      await removeImg(req.file.filename);
       return res
         .status(400)
         .json({ error: "Name and contact information are required" });
     }
-    data.img = req.file.filename;
+    data.img = req.file.path;
     const newPartner = await OutletPartner.create(data);
     res.status(200).json(newPartner);
   } catch (err) {
-    await removeImg("outletPartner", req.file.filename);
+    await removeImg(req.file.filename);
     if (err.code === 11000) {
       // MongoDB duplicate key error
       return res.status(400).json({
@@ -39,12 +38,23 @@ exports.createOutletPartner = async (req, res) => {
 
 exports.getAllPartners = async (req, res) => {
   try {
-    const result = await OutletPartner.find();
-    res.status(200).json(result);
+    
+    const apiFeatures = new ApiFeatures(OutletPartner.find(), req.query)
+      .filtering()    // Apply filtering
+      .paginaton()    // Apply pagination
+      
+
+    // Execute the modified query
+    const partners = await apiFeatures.query;
+
+    res.status(200).json({
+      status: "success",
+      code: 200,
+      message: "All partners fetched successfully",
+      data: partners,
+    });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Failed to get drivers", details: err.message });
+    res.status(500).json({ error: "Failed to get partners", details: err.message });
   }
 };
 
@@ -71,11 +81,11 @@ exports.updatePartner = async (req, res) => {
     let pid = req.params.id;
     const updateData = req.body;
 
-    const file = req.file ? req.file.filename : null;
+    const file = req.file ? req.file.path : null;
 
     const partner = await OutletPartner.findById(pid);
     if (!partner) {
-      await removeImg("outletPartner", req.file.filename);
+      await removeImg(req.file.filename);
       return res.status(404).json({ error: "Outlet Partner not found" });
     }
 
@@ -93,11 +103,13 @@ exports.updatePartner = async (req, res) => {
 
     // Remove old image file if it exists
     if (partner.img && file) {
-      await removeImg("outletPartner", partner.img);
+      await removeImg(partner.img);
     }
 
     res.status(200).json({ result });
   } catch (err) {
+    if(req.file.filename)
+       await removeImg(req.file.filename);
     if (err.code === 11000) {
       return res
         .status(400)

@@ -1,6 +1,5 @@
 const DeliveryDriver = require("../models/delivery_driver_model");
-const fs=require('fs')
-const path = require('path');
+const ApiFeatures=require('../utils/apifeatures')
   
 const removeImg =require('../utils/imageRemove')
 
@@ -16,18 +15,18 @@ exports.createDeliveryDriver = async (req, res) => {
   }
     // Basic Validation (Add more as needed)
     if (!driverData.firstName || !driverData.lastName  || !driverData.phoneNumber) {
-      await removeImg('deliveryDriver',req.file.filename)
+      await removeImg(req.file.path)
       return res
         .status(400)
         .json({ error: "Name and phone number are required" });
     }
-    driverData.img=req.file.filename
+    driverData.img=req.file.path
     const newDriver = await DeliveryDriver.create(driverData);
     res.status(201).json(newDriver);
 
   } catch (err) {
     
-    await removeImg('deliveryDriver',req.file.filename)
+    await removeImg(req.file.path)
     if (err.code === 11000) {
       // MongoDB duplicate key error
       return res
@@ -42,17 +41,27 @@ exports.createDeliveryDriver = async (req, res) => {
   }
 };
 
-// Get all delivery drivers
+
+
 exports.getAllDeliveryDrivers = async (req, res) => {
   try {
-    const drivers = await DeliveryDriver.find();
+    
+    const apiFeatures = new ApiFeatures(DeliveryDriver.find(), req.query)
+      .filtering()    // Apply filtering
+      .paginaton()
+
+    // Execute the modified query
+    const drivers = await apiFeatures.query;
+
     res.json(drivers);
+    
   } catch (err) {
     res
       .status(500)
       .json({ error: "Failed to get drivers", details: err.message });
   }
 };
+
 
 // Get a driver by ID
 exports.getDeliveryDriverById = async (req, res) => {
@@ -79,12 +88,12 @@ exports.updateDeliveryDriver = async (req, res) => {
     const updateData = req.body;
 
     // Check if there is a file upload
-    const file = req.file ? req.file.filename : null;
+    const file = req.file ? req.file.path : null;
 
     // Find the driver and update
     const driver = await DeliveryDriver.findById(driverId);
     if (!driver) {
-      await removeImg('deliveryDriver',req.file.filename)
+      await removeImg(req.file.path)
       return res.status(404).json({ error: "Driver not found" });
     }
 
@@ -100,11 +109,13 @@ exports.updateDeliveryDriver = async (req, res) => {
     
     //remove old img
     if (driver.img && file) {
-      await removeImg('deliveryDriver',driver.img)
+      await removeImg(driver.img)
     }
 
     res.json(updatedDriver);
   } catch (err) {
+    if(req.file.path)
+    await removeImg(req.file.path)
     // Handle duplicate key errors
     if (err.code === 11000) {
       return res.status(400).json({ error: "Phone number or email already in use" });
@@ -126,7 +137,7 @@ exports.deleteDeliveryDriver = async (req, res) => {
 
     // Remove image file if it exists
     if (driver.img) {
-      await removeImg('deliveryDriver',driver.img)
+      await removeImg(driver.img)
     }
 
     res.json({ message: "Driver deleted successfully" });

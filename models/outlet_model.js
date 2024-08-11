@@ -7,6 +7,7 @@ const OutletSchema = new mongoose.Schema({
   outletNumber: {
     type: String,
     required: true,
+    unique:true
   },
   outletName:{
     type:String

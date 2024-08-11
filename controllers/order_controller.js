@@ -1,4 +1,5 @@
 const Order = require("../models/order_model");
+const ApiFeatures=require('../utils/apifeatures')
 
 // Create a new order
 exports.createOrder = async (req, res) => {
@@ -6,7 +7,7 @@ exports.createOrder = async (req, res) => {
     const orderData = req.body;
 
     // Basic validation (add more as needed)
-    if (!orderData.outletId || !orderData.customerId || !orderData.vendorId || !orderData.deliveryId || !orderData.numTrays || !orderData.amount) {
+    if (!orderData.outletId || !orderData.customerId || !orderData.deliveryId || !orderData.numTrays || !orderData.amount) {
       return res.status(400).json({ error: "All required fields must be provided" });
     }
 
@@ -20,12 +21,21 @@ exports.createOrder = async (req, res) => {
 // Get all orders
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate({ path: "outletId", select: "_id outletNumber phoneNumber"}) 
+    // Initialize the ApiFeatures with the Order query and the request's query parameters
+    const apiFeatures = new ApiFeatures(Order.find(), req.query)
+      .filtering()    
+      .paginaton()   
+         
+
+    // Apply population after other query methods
+    const orders = await apiFeatures.query
+      .populate({ path: "outletId", select: "_id outletNumber phoneNumber" })
       .populate({ path: "customerId", select: "_id customerId customerName phoneNumber" })
       .populate({ path: "vendorId", select: "_id vendorName phoneNumber" })
       .populate({ path: "deliveryId", select: "_id firstName phoneNumber" });
+
     res.json(orders);
+    
   } catch (err) {
     res.status(500).json({ error: "Failed to get orders", details: err.message });
   }
