@@ -19,7 +19,8 @@ try{
       }
       data.img=req.file.path
      const newCustomer = await Customer.create(data);
-    res.status(201).json(newCustomer);
+    res.status(201).json({status:"success",
+      newCustomer});
 
 }catch (err) {
    await removeImg(req.file.path)

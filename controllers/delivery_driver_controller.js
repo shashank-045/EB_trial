@@ -18,11 +18,11 @@ exports.createDeliveryDriver = async (req, res) => {
       await removeImg(req.file.path)
       return res
         .status(400)
-        .json({ error: "Name and phone number are required" });
+        .json({ error: "Name and phone number are required" });  
     }
     driverData.img=req.file.path
     const newDriver = await DeliveryDriver.create(driverData);
-    res.status(201).json(newDriver);
+    res.status(201).json({status:"success",newDriver});
 
   } catch (err) {
     

@@ -19,7 +19,7 @@ exports.createOutletPartner = async (req, res) => {
     }
     data.img = req.file.path;
     const newPartner = await OutletPartner.create(data);
-    res.status(200).json(newPartner);
+    res.status(200).json({status:"success",newPartner});
   } catch (err) {
     await removeImg(req.file.filename);
     if (err.code === 11000) {

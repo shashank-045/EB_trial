@@ -16,6 +16,7 @@ var customerRouter=require('./routes/customer')
 var vendorRouter=require('./routes/vendor')
 var orderRouter=require('./routes/order')
 var adminRouter=require('./routes/admin')
+var authRouter=require('./routes/auth')
 
 require("./models/db");
 
@@ -40,6 +41,7 @@ app.use('/customers',customerRouter)
 app.use('/vendors',vendorRouter)
 app.use('/orders',orderRouter)
 app.use('/admin',adminRouter)
+app.use('/auth',authRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -12,7 +12,7 @@ exports.createOrder = async (req, res) => {
     }
 
     const newOrder = await Order.create(orderData);
-    res.status(201).json(newOrder);
+    res.status(201).json({status:"success",newOrder});
   } catch (err) {
     res.status(500).json({ error: "Failed to create order", details: err.message });
   }
