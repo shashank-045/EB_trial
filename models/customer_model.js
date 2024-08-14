@@ -28,6 +28,7 @@ const customerSchema = new mongoose.Schema({
     required: true,
   },
   img: String,
+
 });
 
 const Customer = mongoose.model("Customer", customerSchema);

@@ -1,6 +1,7 @@
 const Outlet = require("../models/outlet_model");
 const ApiFeatures=require('../utils/apifeatures')
 const removeImg = require("../utils/imageRemove");
+const OutletPartner=require('../models/outlet_partner_model')
 
 exports.createOutlet = async (req, res) => {
   try {
@@ -18,6 +19,27 @@ exports.createOutlet = async (req, res) => {
         .json({ error: "Outlet number and location are required" });
     }
     outletData.img = req.file.path;
+    
+
+    //assinging outlet to its partner
+
+    let OpId=outletData.outletPartner
+    try{
+      const result = await OutletPartner.findOneAndUpdate({_id:OpId},{outletId:outletData.outletNumber}, {
+        new: true,
+        runValidators: true
+      });
+  
+      if (!result) return res.status(404).json({ error: "Partner not found" });
+
+    }catch{
+      return res
+      .status(400)
+      .json({ error: "Vlidation error for parther (outletId should be unique) in use" });
+    }
+
+    //
+
     const newOutlet = await Outlet.create(outletData);
     res.status(200).json({
       status: "success",

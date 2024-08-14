@@ -16,13 +16,18 @@ const OutletSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  phoneNumber: String,
+  phoneNumber:{
+    type:String,
+    unique:true,
+    required:true
+  },
   
  
   outletPartner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "OutletPartner",
     required: true,
+    unique:true
   },
   deliveryPartner: [
     {

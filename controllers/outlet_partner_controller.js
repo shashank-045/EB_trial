@@ -25,7 +25,7 @@ exports.createOutletPartner = async (req, res) => {
     if (err.code === 11000) {
       // MongoDB duplicate key error
       return res.status(400).json({
-        error: "Driver with this phone number or email already exists",
+        error: "Partner with this phone number or aadhar number already exists",
       });
     }
     res
@@ -95,8 +95,9 @@ exports.updatePartner = async (req, res) => {
       updateData.img = file;
     }
 
-    const result = await OutletPartner.findByIdAndUpdate(pid, updateData, {
+    const result = await OutletPartner.findOneAndUpdate({_id:pid}, updateData, {
       new: true,
+      runValidators: true
     });
 
     if (!result) return res.status(404).json({ error: "Partner not found" });
@@ -108,6 +109,13 @@ exports.updatePartner = async (req, res) => {
 
     res.status(200).json({ result });
   } catch (err) {
+     
+    if (err.name == "ValidationError"){
+      return res
+      .status(400)
+      .json({ error: "Vlidation error for parther (outletId should be unique) in use" });
+    }
+
     if(req.file.filename)
        await removeImg(req.file.filename);
     if (err.code === 11000) {
@@ -131,7 +139,7 @@ exports.deletePartner = async (req, res) => {
     if (result.img) {
       await removeImg("outletPartner", result.img);
     }
-
+    
     res.status(200).json({ message: "OutletPartner Deleted successfully!!" });
   } catch (err) {
     res
