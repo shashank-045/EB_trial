@@ -107,7 +107,7 @@ exports.getAllCustomers = async (req, res) => {
   
       res.json(updatedCustomer);
     } catch (err) {
-      if(req.file.path)
+      if(req.file && req.file.path)
         await removeImg(req.file.path)
       // Handle duplicate key errors
       if (err.code === 11000) {
@@ -132,7 +132,7 @@ exports.getAllCustomers = async (req, res) => {
         await removeImg(customer.img)
       }
   
-      res.json({ message: "Customer deleted successfully" });
+      res.status(200).json({ message: "Customer deleted successfully" });
     } catch (err) {
       res.status(500).json({ error: "Failed to delete Customer", details: err.message });
     }

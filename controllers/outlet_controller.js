@@ -90,33 +90,29 @@ exports.getAllOutlets = async (req, res) => {
 exports.updateOutlet = async (req, res) => {
   try {
     const outletId = req.params.id;
-    const { deliveryPartner, removeDeliveryPartner, ...otherData } = req.body;
+    const { deliveryPartner, ...otherData } = req.body;
     const file = req.file ? req.file.path : null;
+
     // Find the existing outlet
     const outlet = await Outlet.findById(outletId);
     if (!outlet) {
-      await removeImg(req.file.path)
-      console.log("oooo")
-      console.log(req.file.path)
+      if (file) await removeImg(file);
       return res.status(404).json({ error: "Outlet not found" });
     }
 
-    // Add new delivery partners if provided
-    if (deliveryPartner) {
-      outlet.deliveryPartner = [
-        ...new Set([...outlet.deliveryPartner, ...deliveryPartner]),
-      ];
+    let oldPartner = outlet.outletPartner;
+    let previousDeliveryPartners = outlet.deliveryPartner || [];
+
+    // If delivery partners are provided, replace existing ones with the new entries
+    if (deliveryPartner && deliveryPartner.length > 0) {
+      outlet.deliveryPartner = [...new Set(deliveryPartner)];
+    } else {
+      outlet.deliveryPartner = [];  // Clear all delivery partners if no new entries are provided
     }
 
-    // Remove specified delivery partners if provided
-    if (removeDeliveryPartner) {
-      outlet.deliveryPartner = outlet.deliveryPartner.filter(
-        (partner) => !removeDeliveryPartner.includes(partner.toString())
-      );
-    }
-    let im=outlet.img || null
+    let im = outlet.img || null;
     if (file) {
-      // Update the driver's image path
+      // Update the outlet's image path
       otherData.img = file;
     }
 
@@ -125,27 +121,46 @@ exports.updateOutlet = async (req, res) => {
 
     // Save the updated outlet
     await outlet.save();
-    
-       // Remove old image file if it exists
-       if (im && file) {
-        console.log(im)
-        await removeImg(im)
+
+    // Update the outletPartner's outletId if the partner has changed
+    if (oldPartner != outlet.outletPartner) {
+      try {
+        await OutletPartner.findOneAndUpdate(
+          { _id: oldPartner },
+          { outletId: "free" }
+        );
+        await OutletPartner.findByIdAndUpdate(
+          { _id: outlet.outletPartner },
+          { outletId: outlet.outletNumber }
+        );
+      } catch (error) {
+        return res.status(400).json({
+          status: "error",
+          data: "Outlet partners not updated accordingly",
+        });
       }
-    
+    }
+
+    // Remove old image file if a new image has been uploaded
+    if (im && file) {
+      await removeImg(im);
+    }
+
     res.status(200).json({
       status: "success",
       code: 200,
       message: "Outlet updated successfully!",
     });
   } catch (err) {
-    if(req.file.path)
-      await removeImg(req.file.path)
+    if (req.file && req.file.path) await removeImg(req.file.path);
+
     res.status(500).json({
       error: "Failed to update outlet",
       details: err.message,
     });
   }
 };
+
 
 // Delete an outlet by ID
 exports.deleteOutlet = async (req, res) => {
@@ -156,8 +171,16 @@ exports.deleteOutlet = async (req, res) => {
     if (!outlet) {
       return res.status(404).json({ error: "Outlet not found" });
     }
+     
+    let oldPartner = outlet.outletPartner;
 
     await Outlet.findByIdAndDelete(outletId);
+    
+    await OutletPartner.findOneAndUpdate(
+      { _id: oldPartner },
+      { outletId: "free" }
+    )
+    
     if (outlet.img) {
       await removeImg(outlet.img)
     }

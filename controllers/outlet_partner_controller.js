@@ -1,5 +1,7 @@
 const OutletPartner = require("../models/outlet_partner_model");
 const ApiFeatures=require('../utils/apifeatures')
+const Outlet=require('../models/outlet_model')
+const mongoose=require('mongoose')
 
 const removeImg = require("../utils/imageRemove");
 
@@ -116,7 +118,7 @@ exports.updatePartner = async (req, res) => {
       .json({ error: "Vlidation error for parther (outletId should be unique) in use" });
     }
 
-    if(req.file.filename)
+    if(req.file && req.file.filename)
        await removeImg(req.file.filename);
     if (err.code === 11000) {
       return res
@@ -133,14 +135,31 @@ exports.updatePartner = async (req, res) => {
 exports.deletePartner = async (req, res) => {
   try {
     let pid = req.params.id;
+    const pid2 = new mongoose.Types.ObjectId(pid)
+    
+
+    //check is outlet partner belongs to an outlet 
+    const outlet= await Outlet.findOne({outletPartner:pid2 })
+    if(outlet){
+      return  res
+      .status(500)
+      .json({ status:"fail", error: `OutletPartner is assigned to outlet:${outlet.outletNumber} `});
+     }
+    
     const result = await OutletPartner.findByIdAndDelete(pid);
     if (!result) return res.status(404).json({ error: "Partner not found" });
-
+     
+    try{
     if (result.img) {
-      await removeImg("outletPartner", result.img);
+      await removeImg(result.img);
     }
+  }catch{
+   return res
+      .status(200)
+      .json({ status:"success",error: "Failed to delete OutletPartner image"});
+  }
     
-    res.status(200).json({ message: "OutletPartner Deleted successfully!!" });
+    res.status(200).json({ status:"success", message: "OutletPartner Deleted successfully!!" });
   } catch (err) {
     res
       .status(500)

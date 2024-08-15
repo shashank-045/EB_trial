@@ -43,7 +43,7 @@ class ApiFeatures {
     paginaton()
     {
       const sk=this.qstring.page*1 || 1;
-      const lim=this.qstring.limit*1 || 20;
+      const lim=this.qstring.limit*1 || 50;
 
       this.query=this.query.skip((sk-1)*lim).limit(lim)
 

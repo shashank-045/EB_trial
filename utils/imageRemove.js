@@ -1,7 +1,7 @@
 const cloudinary =require('./cloudinary')
 
 const extractPublicIdFromUrl = (url) => {
-  
+
   const match = url.split('/');
 
   if (match[match.length-2]) {
@@ -15,10 +15,10 @@ const extractPublicIdFromUrl = (url) => {
 
 const removeImg = (imageUrl) => {
   return new Promise((resolve, reject) => {
+   
     try {
       const publicId = extractPublicIdFromUrl(imageUrl);
       console.log(publicId)
-
       cloudinary.uploader.destroy(publicId, (error, result) => {
         if (error) {
           console.error("Error deleting image from Cloudinary:", error);

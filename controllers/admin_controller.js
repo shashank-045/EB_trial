@@ -6,7 +6,7 @@ exports.orderAggregate = async (req, res) => {
   try {
     const { outletId, customerId, createdAt } = req.query;
     const matchCriteria = {};
-
+    console.log(outletId, customerId, createdAt)
     if (outletId) {
       matchCriteria.outletId = new mongoose.Types.ObjectId(outletId);
     }
