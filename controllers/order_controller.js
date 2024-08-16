@@ -25,6 +25,9 @@ exports.createOrder = async (req, res) => {
     const outlet = await Outlet.findById(orderData.outletId)
 
     if (!outlet || !outlet.outletPartner) {
+
+      await Order.findOneAndDelete({_id:newOrder._id}) //delete the order
+
       return res.status(404).json({ error: "OutletPartner not found for the given outlet" });
     }
 
@@ -32,6 +35,8 @@ exports.createOrder = async (req, res) => {
     const outletPartner = await OutletPartner.findById(outlet.outletPartner);
     const deliveryDriver=await Driver.findById(orderData.deliveryId)
     if (!outletPartner || !deliveryDriver) {
+
+      await Order.findOneAndDelete({_id:newOrder._id}) //delete the order
       return res.status(404).json({ error: "OutletPartner or Delevery driver document not found" });
     }
     
@@ -54,7 +59,7 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({status:"success",newOrder});
   } catch (err) {
-    res.status(500).json({ error: "Failed to create order", details: err.message });
+        res.status(500).json({ error: "Failed to create order", details: err.message });
   }
 };
 

@@ -58,7 +58,14 @@ const signToken=(id)=>{
       if(!match || !(match.password==pass))
         return res.status(401).json({
           status:"fail",data:"invalid PhoneNumber or password"})
-      
+
+      if(match.outletId==='free')
+      {
+        return res.status(400).json({
+          status:"fail",
+          message:"Partner not assigned to any outlet yet!"
+        })
+      }
       createJwtAndSend(match,200,res)
      
     
